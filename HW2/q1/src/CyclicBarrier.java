@@ -17,7 +17,7 @@ public class CyclicBarrier {
         this.parties = parties;
         this.currIndex = new AtomicInteger(parties);
         this.awaitSemaphore = new Semaphore(0);
-        this.emptyingSemaphore = new Semaphore(parties -1);
+        this.emptyingSemaphore = new Semaphore(parties);
     }
 
     public int await() throws InterruptedException {
@@ -30,7 +30,7 @@ public class CyclicBarrier {
             awaitSemaphore.acquire();
         }
         if (currIndex.incrementAndGet() == parties) {
-            emptyingSemaphore.release(parties-1);
+            emptyingSemaphore.release(parties);
         }
         return index;
     }
