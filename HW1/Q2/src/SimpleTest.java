@@ -4,7 +4,7 @@ public class SimpleTest {
   public static void main (String[] args) {
     
     int[] A1 = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
-    int x1 = 7;
+    int x1 = 10;
     int numThread1 = 1;
     verifyParallelSearch(x1, A1, numThread1);
     
