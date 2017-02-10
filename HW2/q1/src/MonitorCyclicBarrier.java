@@ -3,21 +3,18 @@
  * tam2983, Travis McClure
  */
 
-import java.util.concurrent.Semaphore; // for implementation using Semaphores
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CyclicBarrier {
+public class MonitorCyclicBarrier {
 
     private int parties; // size of barrier
     private AtomicInteger currIndex; // index of last thread waiting
-    private Semaphore awaitSemaphore; // wait for barrier to fill
-    private Semaphore emptyingSemaphore; // wait for barrier to finish emptying
+    private boolean emptying; // start emptying barrier
 
-    public CyclicBarrier(int parties) {
+    public MonitorCyclicBarrier(int parties) {
         this.parties = parties;
         this.currIndex = new AtomicInteger(parties);
-        this.awaitSemaphore = new Semaphore(0);
-        this.emptyingSemaphore = new Semaphore(parties);
+        this.emptying = false;
     }
 
     /**
@@ -25,22 +22,28 @@ public class CyclicBarrier {
      * @return
      * @throws InterruptedException
      */
-    public int await() throws InterruptedException {
+    public synchronized int await() throws InterruptedException {
         // wait if currently emptying
-        emptyingSemaphore.acquire();
+        while (emptying) {
+            wait();
+        }
         //get index
         int index = currIndex.decrementAndGet();
 
-        if (index == 0){
+        if (index == 0) {
             // start emptying if barrier is full
-            awaitSemaphore.release(parties-1);
+            emptying = true;
+            notifyAll();
         } else {
             // wait for barrier to fill
-            awaitSemaphore.acquire();
+            while (!emptying) {
+                wait();
+            }
         }
         // allow threads to continue once barrier is empty
         if (currIndex.incrementAndGet() == parties) {
-            emptyingSemaphore.release(parties);
+            emptying = false;
+            notifyAll();
         }
         return index;
     }
