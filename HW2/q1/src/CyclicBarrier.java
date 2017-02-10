@@ -2,17 +2,36 @@
  * EID's of group members
  * 
  */
+
 import java.util.concurrent.Semaphore; // for implementation using Semaphores
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CyclicBarrier {
-	
-	public CyclicBarrier(int parties) {
-	}
-	
-	public int await() throws InterruptedException {
-           int index = 0;
-		
-          // you need to write this code
-	    return index;
-	}
+
+    private int parties;
+    private AtomicInteger currIndex;
+    private Semaphore awaitSemaphore;
+    private Semaphore emptyingSemaphore;
+
+    public CyclicBarrier(int parties) {
+        this.parties = parties;
+        this.currIndex = new AtomicInteger(parties);
+        this.awaitSemaphore = new Semaphore(0);
+        this.emptyingSemaphore = new Semaphore(parties -1);
+    }
+
+    public int await() throws InterruptedException {
+        emptyingSemaphore.acquire();
+        int index = currIndex.decrementAndGet();
+
+        if (index == 0){
+            awaitSemaphore.release(parties-1);
+        } else {
+            awaitSemaphore.acquire();
+        }
+        if (currIndex.incrementAndGet() == parties) {
+            emptyingSemaphore.release(parties-1);
+        }
+        return index;
+    }
 }
