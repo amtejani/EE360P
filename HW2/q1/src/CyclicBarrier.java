@@ -22,7 +22,7 @@ public class CyclicBarrier {
 
     /**
      * waits for enough threads to call, then releases them before accepting more threads
-     * @return
+     * @return index in barrier of current thread
      * @throws InterruptedException
      */
     public int await() throws InterruptedException {
