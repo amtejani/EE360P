@@ -31,7 +31,6 @@ public class Garden {
                     e.printStackTrace();
                 }
             }
-            diggingIndex++;
             while (digging) {
                 try {
                     diggingCondition.await();
@@ -47,12 +46,19 @@ public class Garden {
     }
 
     public void doneDigging() {
+        diggingIndex++;
         diggingLock.lock();
         try {
             digging = false;
             diggingCondition.signalAll();
         } finally {
             diggingLock.unlock();
+        }
+        seedingLock.lock();
+        try {
+            slowDiggingCondition.signalAll();
+        } finally {
+            seedingLock.unlock();
         }
     }
 
@@ -66,16 +72,22 @@ public class Garden {
                     e.printStackTrace();
                 }
             }
-            seedingIndex++;
         } finally {
             seedingLock.unlock();
         }
     }
 
     public void doneSeeding() {
+        seedingIndex++;
         diggingLock.lock();
         try {
             waitForSlowpokesCondition.signalAll();
+        } finally {
+            diggingLock.unlock();
+        }
+        diggingLock.lock();
+        try {
+            slowSeedingCondition.signalAll();
         } finally {
             diggingLock.unlock();
         }
@@ -91,16 +103,25 @@ public class Garden {
                     e.printStackTrace();
                 }
             }
-            fillingIndex++;
+            while (digging) {
+                try {
+                    diggingCondition.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         } finally {
             diggingLock.unlock();
         }
     }
 
     public void doneFilling() {
+        fillingIndex++;
         diggingLock.lock();
         try {
             waitForSlowpokesCondition.signalAll();
+            digging = false;
+            diggingCondition.signalAll();
         } finally {
             diggingLock.unlock();
         }
