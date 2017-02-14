@@ -7,8 +7,13 @@ public class FairReadWriteLock {
     boolean reading = false;
     boolean writing = false;
 
+    /**
+     * request a read sequence
+     */
     public synchronized void beginRead() {
+        // get request number
         int thisReq = accessRequests++;
+        // wait for turn or wait for writing to finish
         while(writing || thisReq > currRequest) {
             try {
                 wait();
@@ -16,18 +21,28 @@ public class FairReadWriteLock {
                 e.printStackTrace();
             }
         }
+        // fill request
         currRequest += 1;
         numReaders++;
         notify();
     }
 
+    /**
+     * end a read sequence
+     */
     public synchronized void endRead() {
+        // end read
         numReaders--;
         notify();
     }
 
+    /**
+     * request a write sequence
+     */
     public synchronized void beginWrite() {
+        // get request number
         int thisRequest = accessRequests++;
+        // wait for turn or wait for reading/writing to finish
         while(numReaders > 0 || writing || thisRequest > currRequest) {
             try {
                 wait();
@@ -35,12 +50,17 @@ public class FairReadWriteLock {
                 e.printStackTrace();
             }
         }
+        // fill request
         writing = true;
         currRequest++;
         notify();
     }
 
+    /**
+     * end a write sequence
+     */
     public synchronized void endWrite() {
+        // end write
         writing = false;
         notify();
     }
