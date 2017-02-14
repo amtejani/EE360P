@@ -1,6 +1,6 @@
-/*
- * amt3639, Ali Tejani
- * tam2983, Travis McClure
+/**
+ * Ali Tejani, amt3639
+ * Travis McClure, tam2983
  */
 
 import java.util.concurrent.Semaphore; // for implementation using Semaphores

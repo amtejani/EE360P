@@ -1,4 +1,7 @@
-import org.junit.Test;
+/**
+ * Ali Tejani, amt3639
+ * Travis McClure, tam2983
+ */
 
 public class FairReadWriteLock {
     int numReaders = 0;
