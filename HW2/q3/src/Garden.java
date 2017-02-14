@@ -24,7 +24,7 @@ public class Garden {
     public void startDigging() {
         diggingLock.lock();
         try {
-            while (diggingIndex - seedingIndex >= 4 || seedingIndex - fillingIndex >= 8) {
+            while (diggingIndex - seedingIndex >= 4 || diggingIndex - fillingIndex >= 8) {
                 try {
                     waitForSlowpokesCondition.await();
                 } catch (InterruptedException e) {
@@ -46,8 +46,8 @@ public class Garden {
     }
 
     public void doneDigging() {
-        diggingIndex++;
         diggingLock.lock();
+        diggingIndex++;
         try {
             digging = false;
             diggingCondition.signalAll();
@@ -78,8 +78,8 @@ public class Garden {
     }
 
     public void doneSeeding() {
-        seedingIndex++;
         diggingLock.lock();
+        seedingIndex++;
         try {
             waitForSlowpokesCondition.signalAll();
         } finally {
@@ -110,14 +110,15 @@ public class Garden {
                     e.printStackTrace();
                 }
             }
+            digging = true;
         } finally {
             diggingLock.unlock();
         }
     }
 
     public void doneFilling() {
-        fillingIndex++;
         diggingLock.lock();
+        fillingIndex++;
         try {
             waitForSlowpokesCondition.signalAll();
             digging = false;
