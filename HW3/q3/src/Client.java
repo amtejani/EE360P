@@ -34,15 +34,15 @@ public class Client {
                 String[] tokens = cmd.split(" ");
 
                 if (tokens[0].equals("setmode")) {
-                    // TODO: set the mode of communication for sending commands to the server
+                    // set the mode of communication for sending commands to the server
                     // and display the name of the protocol that will be used in future
                     client.setMode(tokens[1]);
                 } else if (tokens[0].equals("purchase") || tokens[0].equals("cancel")) {
-                    // TODO: send appropriate command to the server and display the
+                    // send appropriate command to the server and display the
                     // appropriate responses form the server
                     client.sendCommand(cmd);
                 } else if (tokens[0].equals("search") || tokens[0].equals("list")) {
-                    // TODO: send appropriate command to the server and display the
+                    // send appropriate command to the server and display the
                     // appropriate responses form the server
                     client.sendCommand(cmd);
                 } else {
@@ -81,7 +81,6 @@ public class Client {
         this.udpSocket = new DatagramSocket();
         this.din = new Scanner(tcpSocket.getInputStream());
         this.pout = new PrintStream(tcpSocket.getOutputStream());
-
     }
 
     public void setMode(String mode) {
