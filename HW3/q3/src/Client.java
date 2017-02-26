@@ -109,6 +109,7 @@ public class Client {
             pout.flush();
             while(din.hasNextLine()) {
                 retString = din.nextLine();
+                if(retString.equals("done")) break;
                 System.out.println(retString);
             }
         }

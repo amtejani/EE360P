@@ -23,10 +23,10 @@ public class Server {
         // parse the inventory file
         Inventory inventory = new Inventory(fileName);
 
-        // TODO: handle request from clients
+        // handle request from clients
         try {
 
-            // TODO start thread with udpSocket
+            // start thread with udpSocket
             Thread udp = new UDPThread(inventory, udpPort);
             udp.start();
             ServerSocket tcpServer = new ServerSocket(tcpPort);

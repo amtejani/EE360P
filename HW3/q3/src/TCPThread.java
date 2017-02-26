@@ -20,12 +20,18 @@ public class TCPThread extends Thread {
 
     public void run() {
         String command;
-        while ((command = din.nextLine()) != null) {
-            String response = inventory.getCommand(command);
-            pout.println(response);
-            pout.flush();
-        }
         try {
+            while (din.hasNextLine()) {
+                command = din.nextLine();
+                String response = inventory.getCommand(command);
+
+    //            System.out.println("in: " + command);
+    //            System.out.println("out: " + response);
+
+                pout.println(response);
+                pout.println("done");
+                pout.flush();
+            }
             s.close();
         } catch (IOException e) {
             e.printStackTrace();

@@ -1,18 +1,30 @@
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 
 public class Inventory {
+    class Order{
+        int orderID, quantity;
+        String username, productName;
+    }
+
     private HashMap<String, Integer> storage;
+    private HashMap<Integer, Order> orders;
+    private int numOrders;
     public Inventory(String file) {
         storage = new HashMap<>();
-        // TODO read file
+        orders = new HashMap<>();
+        numOrders = 1;
+        // read file
         try {
             Scanner fileReader = new Scanner(new FileReader(file));
             String line;
             while((line = fileReader.nextLine()) != null) {
+                if (line.split(" ").length != 2) break;
                 String item = line.split(" ")[0];
                 int count = Integer.parseInt(line.split(" ")[1]);
                 storage.put(item, count);
@@ -33,19 +45,60 @@ public class Inventory {
         return "ERROR: No such command";
     }
 
-    private String purchase(String username, String productName, int quantity) {
-        return "";
+    private synchronized String purchase(String username, String productName, int quantity) {
+        Integer i = storage.get(productName);
+        if(i == null) {
+            return "Not Available - We do not sell this product";
+        } else if (i < quantity) {
+            return "Not Available - Not enough items";
+        } else {
+            storage.put(productName, i - quantity);
+            Order order = new Order();
+            order.orderID = numOrders++;
+            order.productName = productName;
+            order.username = username;
+            order.quantity = quantity;
+            orders.put(order.orderID, order);
+            return "You order has been placed, " + order.orderID + " "
+                    + order.username + " "
+                    + order.productName + " "
+                    + order.quantity;
+        }
     }
 
-    private String cancel(String orderID) {
-        return "";
+    private synchronized String cancel(String orderID) {
+        Order order = orders.remove(Integer.parseInt(orderID));
+        if(order == null) {
+            return orderID + " not found, no such order";
+        }
+        storage.put(order.productName, storage.get(order.productName) + order.quantity);
+        return "Order " + orderID + " is canceled";
     }
 
-    private String search(String username) {
-        return "";
+    private synchronized String search(String username) {
+        String newLine = "";
+        String retValue = "";
+        for(Order order: orders.values()) {
+            if(order.username.equals(username)) {
+                retValue += newLine + order.orderID + ", "
+                        + order.productName + ", "
+                        + order.quantity;
+                newLine = "\n";
+            }
+        }
+        if (retValue.equals("")) {
+            return "No order found for " + username;
+        }
+        return retValue;
     }
 
-    private String list() {
-        return "";
+    private synchronized String list() {
+        String newLine = "";
+        String retValue = "";
+        for(Map.Entry<String, Integer> entry: storage.entrySet()) {
+            retValue += newLine + entry.getKey() + " " + entry.getValue();
+            newLine = "\n";
+        }
+        return retValue;
     }
 }

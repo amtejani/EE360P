@@ -21,10 +21,14 @@ public class UDPThread extends Thread {
     public void run() {
         try {
             while (true) {
+                this.buffer = new byte[1024];
                 datapacket = new DatagramPacket(buffer, buffer.length);
                 datasocket.receive(datapacket);
-                // TODO parse command
-                String response = inventory.getCommand(String.valueOf(buffer));
+                String response = inventory.getCommand(new String(buffer).trim());
+
+//                System.out.println("in: " + new String(buffer));
+//                System.out.println("out: " + response);
+
                 returnBuffer = response.getBytes();
                 returnpacket = new DatagramPacket(returnBuffer,returnBuffer.length,datapacket.getAddress(),datapacket.getPort());
                 datasocket.send(returnpacket);
