@@ -44,11 +44,8 @@ public class Client {
                     // set the mode of communication for sending commands to the server
                     // and display the name of the protocol that will be used in future
                     client.setMode(tokens[1]);
-                } else if (tokens[0].equals("purchase") || tokens[0].equals("cancel")) {
-                    // send appropriate command to the server and display the
-                    // appropriate responses form the server
-                    client.sendCommand(cmd);
-                } else if (tokens[0].equals("search") || tokens[0].equals("list")) {
+                } else if (tokens[0].equals("purchase") || tokens[0].equals("cancel")
+                        || tokens[0].equals("search") || tokens[0].equals("list")) {
                     // send appropriate command to the server and display the
                     // appropriate responses form the server
                     client.sendCommand(cmd);
