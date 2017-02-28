@@ -8,9 +8,9 @@ import java.util.HashMap;
  * Created by Ali on 2/25/2017.
  */
 public class UDPThread extends Thread {
-    private byte[] buffer, returnBuffer;
+    private byte[] buffer;
     private Inventory inventory;
-    private DatagramPacket datapacket, returnpacket;
+    private DatagramPacket datapacket;
     private DatagramSocket datasocket;
     public UDPThread(Inventory inventory, int udpPort) throws SocketException {
         this.inventory = inventory;
@@ -24,14 +24,8 @@ public class UDPThread extends Thread {
                 this.buffer = new byte[1024];
                 datapacket = new DatagramPacket(buffer, buffer.length);
                 datasocket.receive(datapacket);
-                String response = inventory.getCommand(new String(buffer).trim());
-
-//                System.out.println("in: " + new String(buffer));
-//                System.out.println("out: " + response);
-
-                returnBuffer = response.getBytes();
-                returnpacket = new DatagramPacket(returnBuffer,returnBuffer.length,datapacket.getAddress(),datapacket.getPort());
-                datasocket.send(returnpacket);
+                Thread t = new UDPHandlerThread(inventory,datasocket,new String(buffer).trim(),datapacket);
+                t.start();
             }
         } catch (IOException e) {
             e.printStackTrace();
