@@ -1,6 +1,11 @@
+/**
+ * Keeps track of inventory and executes client requests
+ * Ali Tejani, amt3639
+ * Travis McClure, tam2983
+ */
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -34,6 +39,11 @@ public class Inventory {
         }
     }
 
+    /**
+     * parse command
+     * @param command string to be parsed
+     * @return appropriate response for command
+     */
     public String getCommand(String command) {
         String[] tokens = command.split(" ");
         switch (tokens[0]) {
@@ -45,6 +55,13 @@ public class Inventory {
         return "ERROR: No such command";
     }
 
+    /**
+     * Creates order for client
+     * @param username username of buyer
+     * @param productName product being purchased
+     * @param quantity number of product being purchased
+     * @return appropriate response for command
+     */
     private synchronized String purchase(String username, String productName, int quantity) {
         Integer i = storage.get(productName);
         if(i == null) {
@@ -66,6 +83,11 @@ public class Inventory {
         }
     }
 
+    /**
+     * cancels an order
+     * @param orderID order to be canceled
+     * @return appropriate response for command
+     */
     private synchronized String cancel(String orderID) {
         Order order = orders.remove(Integer.parseInt(orderID));
         if(order == null) {
@@ -75,6 +97,11 @@ public class Inventory {
         return "Order " + orderID + " is canceled";
     }
 
+    /**
+     * finds all orders for user
+     * @param username user to search for
+     * @return appropriate response for command
+     */
     private synchronized String search(String username) {
         String newLine = "";
         String retValue = "";

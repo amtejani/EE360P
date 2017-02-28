@@ -1,11 +1,14 @@
+/**
+ * Handles UDP requests
+ * Ali Tejani, amt3639
+ * Travis McClure, tam2983
+ */
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
-/**
- * Created by Ali on 2/28/2017.
- */
 public class UDPHandlerThread extends Thread {
     private byte[] returnBuffer;
     private Inventory inventory;
@@ -21,7 +24,9 @@ public class UDPHandlerThread extends Thread {
 
     public void run() {
         try {
+            // get appropriate response
             String response = inventory.getCommand(command);
+            // send response to client
             returnBuffer = response.getBytes();
             returnpacket = new DatagramPacket(returnBuffer,returnBuffer.length,datapacket.getAddress(),datapacket.getPort());
             datasocket.send(returnpacket);

@@ -1,12 +1,14 @@
+/**
+ * Server thread to receive UDP packets
+ * Ali Tejani, amt3639
+ * Travis McClure, tam2983
+ */
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.util.HashMap;
 
-/**
- * Created by Ali on 2/25/2017.
- */
 public class UDPThread extends Thread {
     private byte[] buffer;
     private Inventory inventory;
@@ -20,10 +22,13 @@ public class UDPThread extends Thread {
 
     public void run() {
         try {
+            // while server is open
             while (true) {
+                // accept packet
                 this.buffer = new byte[1024];
                 datapacket = new DatagramPacket(buffer, buffer.length);
                 datasocket.receive(datapacket);
+                // handle packet
                 Thread t = new UDPHandlerThread(inventory,datasocket,new String(buffer).trim(),datapacket);
                 t.start();
             }

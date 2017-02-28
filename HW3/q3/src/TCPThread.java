@@ -1,11 +1,14 @@
+/**
+ * Handles TCP requests
+ * Ali Tejani, amt3639
+ * Travis McClure, tam2983
+ */
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
-/**
- * Created by Ali on 2/25/2017.
- */
 public class TCPThread extends Thread {
     private Inventory inventory;
     private Socket s;
@@ -21,14 +24,15 @@ public class TCPThread extends Thread {
     public void run() {
         String command;
         try {
+            // while client is connected
             while (din.hasNextLine()) {
+                // read client input
                 command = din.nextLine();
+                // get response
                 String response = inventory.getCommand(command);
-
-    //            System.out.println("in: " + command);
-    //            System.out.println("out: " + response);
-
+                // send response
                 pout.println(response);
+                // done flag, for multiple lines
                 pout.println("done");
                 pout.flush();
             }

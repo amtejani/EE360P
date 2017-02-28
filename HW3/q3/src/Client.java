@@ -1,3 +1,9 @@
+/**
+ * Client Side for program
+ * Ali Tejani, amt3639
+ * Travis McClure, tam2983
+ */
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.*;
@@ -27,6 +33,7 @@ public class Client {
 
         Client client = null;
         try {
+            // Create new client handler
             client = new Client(hostAddress, tcpPort, udpPort);
             Scanner sc = new Scanner(System.in);
             while (sc.hasNextLine()) {
@@ -83,6 +90,10 @@ public class Client {
         this.pout = new PrintStream(tcpSocket.getOutputStream());
     }
 
+    /**
+     * set connection mode
+     * @param mode new mode to use
+     */
     public void setMode(String mode) {
         if (mode.equals("T"))
             connectionType = TCP;
@@ -91,6 +102,11 @@ public class Client {
         System.out.println("Using " + connectionType + " connection.");
     }
 
+    /**
+     * send command to server
+     * @param command command to be sent
+     * @throws IOException
+     */
     public void sendCommand(String command) throws IOException {
         buffer = new byte[command.length()];
         buffer = command.getBytes();
@@ -115,6 +131,9 @@ public class Client {
         }
     }
 
+    /**
+     * close sockets
+     */
     public void close() {
         try {
             tcpSocket.close();
