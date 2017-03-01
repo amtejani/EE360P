@@ -28,7 +28,8 @@ public class Inventory {
         try {
             Scanner fileReader = new Scanner(new FileReader(file));
             String line;
-            while((line = fileReader.nextLine()) != null) {
+            while(fileReader.hasNextLine()) {
+                line = fileReader.nextLine();
                 if (line.split(" ").length != 2) break;
                 String item = line.split(" ")[0];
                 int count = Integer.parseInt(line.split(" ")[1]);
