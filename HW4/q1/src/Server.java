@@ -4,9 +4,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 public class Server {
 
@@ -27,9 +25,6 @@ public class Server {
             // parse inputs to get the ips and ports of servers
             String str = sc.nextLine();
             System.out.println("address for server " + i + ": " + str);
-//            String[] input = str.split(":");
-//            String hostname = input[0];
-//            int port = Integer.parseInt(input[1]);
             if(i == myID) {
                 String[] input = str.split(":");
                 thisPort = Integer.parseInt(input[1]);
@@ -52,35 +47,72 @@ public class Server {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        // TODO: start server socket to communicate with clients and other servers
-
-        // TODO: parse the inventory file
-
-        // TODO: handle request from client
     }
 
+    class TimeStamp implements Comparable<TimeStamp> {
+        int pid;
+        int logicalClock;
+        String message;
+        public TimeStamp(String input) {
+            String[] in = input.split(":");
+            this.pid = Integer.parseInt(in[1]);
+            this.logicalClock = Integer.parseInt(in[2]);
+            this.message = in[3];
+        }
+        public TimeStamp(int id, int clk, String msg) {
+            pid = id;
+            logicalClock = clk;
+            message = msg;
+        }
+
+        @Override
+        public int compareTo(TimeStamp o) {
+            if (logicalClock > o.logicalClock)
+                return 1;
+            if (logicalClock <  o.logicalClock)
+                return -1;
+            if (pid > o.pid) return 1;
+            if (pid < o.pid)
+                return -1;
+            return 0;
+        }
+    }
+
+    private Queue<TimeStamp> q;
     private Set<InetSocketAddress> servers;
     private int id;
+    private LamportClock clk;
+    private boolean waiting;
+    private int numOkays;
     public Inventory inventory;
     public static final int TIMEOUT = 100;
     public Server(Set<String> servers, Inventory inventory, int id) {
+        this.servers = new HashSet<>();
         for(String s: servers) {
             String[] input = s.split(":");
             String hostname = input[0];
             int port = Integer.parseInt(input[1]);
             this.servers.add(new InetSocketAddress(hostname, port));
         }
+        this.q = new PriorityQueue<>();
         this.inventory = inventory;
         this.id = id;
+        this.clk = new LamportClock();
+        this.waiting = false;
     }
 
-    private void sendMessage(String message) {
+    private void sendMessage(String messageType,String message) {
         for(InetSocketAddress other: servers) {
             Socket s = new Socket();
             try {
                 s.connect(other, Server.TIMEOUT);
                 PrintStream pout = new PrintStream(s.getOutputStream());
-                pout.println("server\n" + message);
+                StringBuilder str = new StringBuilder("server\n");
+                str.append(messageType); str.append(":");
+                str.append(id); str.append(":");
+                str.append(clk); str.append(":");
+                str.append(message);
+                pout.println(str.toString());
                 pout.flush();
             } catch (SocketTimeoutException e) {
                 servers.remove(other);
@@ -90,28 +122,69 @@ public class Server {
         }
     }
 
-    public synchronized void requestCS() {
-        // update clock
-        // TODO: print lamports clock and command to port
-//        sendMessage();
-        // TODO: wait for acknowledgements
-        // add to q
-        // set num acks to 0
-        // n = num servers
-//        while ((q.peek().pid != myId) || (numAcks < n))
-//            myWait();
-    }
-
-    public synchronized void releaseCS() {
-        // TODO: remove from q, process command
-    }
-
-    public synchronized void handleMessage(String messageType) {
-        // TODO: get timestamp and update clock
-        switch (messageType) {
-            case "request": // TODO: add to q, send okay
-            case "okay": // TODO: inc num okays
-            case "release": // TODO: remove from q
+    public synchronized void requestCS(String message) {
+        // wait for last command
+        while(waiting)  {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+        // update clock
+        clk.tick();
+        // print lamports clock and command to port
+        sendMessage("request",message);
+        // add to q
+        TimeStamp t = new TimeStamp(id, clk.getValue(), message);
+        q.add(t);
+        // set num acks to 0
+        numOkays = 0;
+        // wait for acknowledgements
+        while ((q.peek().pid != id) || (numOkays < servers.size())) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public synchronized String releaseCS() {
+        // remove from q
+        TimeStamp t = q.remove();
+        waiting = false;
+        notifyAll();
+        // process command
+        return inventory.getCommand(t.message);
+
+    }
+
+    public synchronized void handleMessage(String message) {
+        String[] msg = message.split(":");
+        String messageType = msg[0];
+        // get timestamp and update clock
+        clk.receiveAction(Integer.parseInt(msg[1]),Integer.parseInt(msg[2]));
+        switch (messageType) {
+            case "request":
+                // add to q, send okay
+                TimeStamp t = new TimeStamp(message);
+                q.add(t);
+                sendMessage("okay","okay");
+                break;
+            case "okay": numOkays++; break;
+            case "release":
+                // remove from q
+                int src = Integer.parseInt(message.split(" ")[1]);
+                Iterator<TimeStamp> it =  q.iterator();
+                while (it.hasNext()){
+                    TimeStamp timeStamp = it.next();
+                    if (timeStamp.pid == src) {
+                        inventory.getCommand(timeStamp.message);
+                        it.remove();
+                    }
+                }
+        }
+        notifyAll();
     }
 }

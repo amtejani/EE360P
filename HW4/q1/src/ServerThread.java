@@ -28,20 +28,24 @@ public class ServerThread extends Thread {
             while (din.hasNextLine()) {
                 String messageType = din.nextLine();
                 if(messageType.equals("client")) {
-                    // TODO: request CS
                     // read client input
                     command = din.nextLine();
+                    // request CS
+                    server.requestCS(command);
                     // get response
-                    String response = server.inventory.getCommand(command);
+//                    String response = server.inventory.getCommand(command);
+
+                    // release CS
+                    String response = server.releaseCS();
                     // send response
                     pout.println(response);
                     // done flag, for multiple lines
                     pout.println("done");
                     pout.flush();
-                    // TODO: release CS
                 } else if (messageType.equals("server")) {
-                    // TODO: receive request and send okay, or receive okay, or receive release
-
+                    // receive request and send okay, or receive okay, or receive release
+                    command = din.nextLine();
+                    server.handleMessage(command);
                 }
             }
             s.close();
