@@ -76,7 +76,7 @@ public class Client {
     public void sendCommand(String command) throws IOException {
         connectNext();
         String retString;
-        pout.println(command);
+        pout.println("client\n" + command);
         pout.flush();
         while (din.hasNextLine()) {
             retString = din.nextLine();
