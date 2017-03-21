@@ -53,10 +53,10 @@ public class Client {
     public static final int TIMEOUT = 100;
     public Client(Queue<InetSocketAddress> servers) throws IOException {
         this.servers = servers;
-        this.currentServer = new Socket();
     }
 
     private void connectNext() throws IOException{
+        currentServer = new Socket();
         while(!currentServer.isConnected()) {
             try {
                 this.currentServer.connect(this.servers.peek(), TIMEOUT);
@@ -66,6 +66,8 @@ public class Client {
                 servers.remove();
                 currentServer.close();
                 currentServer = new Socket();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -85,7 +87,8 @@ public class Client {
             if (retString.equals("done")) break;
             System.out.println(retString);
         }
-        System.out.println("[DEBUG] done");
+//        System.out.println("[DEBUG] done");
+        close();
     }
 
     /**

@@ -65,6 +65,10 @@ public class Server {
             message = msg;
         }
 
+        public String toString() {
+            return pid + " " + logicalClock + " " + message;
+        }
+
         @Override
         public int compareTo(TimeStamp o) {
             if (logicalClock > o.logicalClock)
@@ -102,7 +106,7 @@ public class Server {
     }
 
     private void sendMessage(String messageType, int c, String message) {
-        // TODO: ping connection to see if crashed
+//        displayQueue();
         for(InetSocketAddress other: servers) {
             Socket s = new Socket();
             try {
@@ -114,6 +118,7 @@ public class Server {
                 str.append(c); str.append(":");
                 str.append(message);
                 pout.println(str.toString());
+//                System.out.println("SEND: " + str.toString());
                 pout.flush();
             } catch (SocketTimeoutException e) {
                 servers.remove(other);
@@ -163,29 +168,33 @@ public class Server {
         TimeStamp t = q.remove();
         waiting = false;
         notifyAll();
+        sendMessage("release", t.logicalClock, t.message);
         // process command
         return inventory.getCommand(t.message);
 
     }
 
     public synchronized void handleMessage(String message) {
+//        System.out.println("RECEIVE: " + message);
         String[] msg = message.split(":");
         String messageType = msg[0];
         // get timestamp and update clock
-        clk.receiveAction(Integer.parseInt(msg[1]),Integer.parseInt(msg[2]));
+        clk.receiveAction(Integer.parseInt(msg[1]), Integer.parseInt(msg[2]));
         switch (messageType) {
             case "request":
                 // add to q, send okay
                 TimeStamp t = new TimeStamp(message);
                 q.add(t);
-                sendMessage("okay",clk.getValue(),"okay");
+                sendMessage("okay", clk.getValue(), "okay");
                 break;
-            case "okay": numOkays++; break;
+            case "okay":
+                numOkays++;
+                break;
             case "release":
                 // remove from q
-                int src = Integer.parseInt(message.split(" ")[1]);
-                Iterator<TimeStamp> it =  q.iterator();
-                while (it.hasNext()){
+                int src = Integer.parseInt(message.split(":")[1]);
+                Iterator<TimeStamp> it = q.iterator();
+                while (it.hasNext()) {
                     TimeStamp timeStamp = it.next();
                     if (timeStamp.pid == src) {
                         inventory.getCommand(timeStamp.message);
@@ -194,5 +203,12 @@ public class Server {
                 }
         }
         notifyAll();
+    }
+
+    private void displayQueue() {
+        for (TimeStamp t : q) {
+            System.out.println(t);
+        }
+        System.out.println();
     }
 }
