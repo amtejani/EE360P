@@ -101,7 +101,8 @@ public class Server {
         this.waiting = false;
     }
 
-    private void sendMessage(String messageType,String message) {
+    private void sendMessage(String messageType, int c, String message) {
+        // TODO: ping connection to see if crashed
         for(InetSocketAddress other: servers) {
             Socket s = new Socket();
             try {
@@ -110,12 +111,18 @@ public class Server {
                 StringBuilder str = new StringBuilder("server\n");
                 str.append(messageType); str.append(":");
                 str.append(id); str.append(":");
-                str.append(clk); str.append(":");
+                str.append(c); str.append(":");
                 str.append(message);
                 pout.println(str.toString());
                 pout.flush();
             } catch (SocketTimeoutException e) {
                 servers.remove(other);
+                try {
+                    s.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                s = new Socket();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -123,6 +130,9 @@ public class Server {
     }
 
     public synchronized void requestCS(String message) {
+        // update clock
+        clk.tick();
+        int c = clk.getValue();
         // wait for last command
         while(waiting)  {
             try {
@@ -131,12 +141,10 @@ public class Server {
                 e.printStackTrace();
             }
         }
-        // update clock
-        clk.tick();
         // print lamports clock and command to port
-        sendMessage("request",message);
+        sendMessage("request",c,message);
         // add to q
-        TimeStamp t = new TimeStamp(id, clk.getValue(), message);
+        TimeStamp t = new TimeStamp(id, c, message);
         q.add(t);
         // set num acks to 0
         numOkays = 0;
@@ -170,7 +178,7 @@ public class Server {
                 // add to q, send okay
                 TimeStamp t = new TimeStamp(message);
                 q.add(t);
-                sendMessage("okay","okay");
+                sendMessage("okay",clk.getValue(),"okay");
                 break;
             case "okay": numOkays++; break;
             case "release":

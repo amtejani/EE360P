@@ -64,6 +64,8 @@ public class Client {
                 this.pout = new PrintStream(currentServer.getOutputStream());
             } catch (SocketTimeoutException e) {
                 servers.remove();
+                currentServer.close();
+                currentServer = new Socket();
             }
         }
     }
@@ -83,6 +85,7 @@ public class Client {
             if (retString.equals("done")) break;
             System.out.println(retString);
         }
+        System.out.println("[DEBUG] done");
     }
 
     /**
