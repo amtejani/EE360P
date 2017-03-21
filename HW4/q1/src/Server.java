@@ -21,7 +21,7 @@ public class Server {
 
         Set<String> servers = new HashSet<>();
         int thisPort = 0;
-        for (int i = 0; i < numServer; i++) {
+        for (int i = 1; i <= numServer; i++) {
             // parse inputs to get the ips and ports of servers
             String str = sc.nextLine();
             System.out.println("address for server " + i + ": " + str);
