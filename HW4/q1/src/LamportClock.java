@@ -1,3 +1,7 @@
+ /**
+ *  Ali Tejani, amt3639
+ * Travis McClure, tam2983
+ */
 
 public class LamportClock {
     int c;
