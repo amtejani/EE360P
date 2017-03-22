@@ -186,39 +186,40 @@ public class Server {
         String messageType = msg[0];
         // get timestamp and update clock
         clk.receiveAction(Integer.parseInt(msg[1]), Integer.parseInt(msg[2]));
-        boolean send = false;
+        boolean duplicate = false;
         TimeStamp t = new TimeStamp(message);
         Iterator<TimeStamp> it = q.iterator();
         while (it.hasNext()) {
             TimeStamp timeStamp = it.next();
             if (timeStamp.equals(t)) {
-                send = true;
+                duplicate = true;
             }
         }
-        if (send)
+        if (!duplicate) {
             sendMessage(messageType, t.pid, t.logicalClock, t.message);
-        switch (messageType) {
-            case "request":
-                // add to q, send okay
-                q.add(t);
-                sendMessage("okay", id, clk.getValue(), "okay");
-                break;
-            case "okay":
-                numOkays++;
-                break;
-            case "release":
-                // remove from q
-                int src = Integer.parseInt(message.split(":")[1]);
-                Iterator<TimeStamp> iter = q.iterator();
-                while (iter.hasNext()) {
-                    TimeStamp timeStamp = it.next();
-                    if (timeStamp.pid == src) {
-                        inventory.getCommand(timeStamp.message);
-                        it.remove();
+            switch (messageType) {
+                case "request":
+                    // add to q, send okay
+                    q.add(t);
+                    sendMessage("okay", id, clk.getValue(), "okay");
+                    break;
+                case "okay":
+                    numOkays++;
+                    break;
+                case "release":
+                    // remove from q
+                    int src = Integer.parseInt(message.split(":")[1]);
+                    Iterator<TimeStamp> iter = q.iterator();
+                    while (iter.hasNext()) {
+                        TimeStamp timeStamp = it.next();
+                        if (timeStamp.pid == src) {
+                            inventory.getCommand(timeStamp.message);
+                            it.remove();
+                        }
                     }
-                }
+            }
+            notifyAll();
         }
-        notifyAll();
     }
 
     private void displayQueue() {
