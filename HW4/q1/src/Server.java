@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.sql.Time;
 import java.util.*;
 
 public class Server {
@@ -70,6 +71,10 @@ public class Server {
             message = msg;
         }
 
+        public String toString() {
+            return pid + " " + logicalClock + " " + message;
+        }
+
         @Override
         public int compareTo(TimeStamp o) {
             if (logicalClock > o.logicalClock)
@@ -106,8 +111,8 @@ public class Server {
         this.waiting = false;
     }
 
-    private void sendMessage(String messageType, int c, String message) {
-        // TODO: ping connection to see if crashed
+    private void sendMessage(String messageType, int pid, int c, String message) {
+//        displayQueue();
         for(InetSocketAddress other: servers) {
             Socket s = new Socket();
             try {
@@ -115,10 +120,11 @@ public class Server {
                 PrintStream pout = new PrintStream(s.getOutputStream());
                 StringBuilder str = new StringBuilder("server\n");
                 str.append(messageType); str.append(":");
-                str.append(id); str.append(":");
+                str.append(pid); str.append(":");
                 str.append(c); str.append(":");
                 str.append(message);
                 pout.println(str.toString());
+//                System.out.println("SEND: " + str.toString());
                 pout.flush();
             } catch (SocketTimeoutException e) {
                 servers.remove(other);
@@ -147,7 +153,7 @@ public class Server {
             }
         }
         // print lamports clock and command to port
-        sendMessage("request",c,message);
+        sendMessage("request",id,c,message);
         // add to q
         TimeStamp t = new TimeStamp(id, c, message);
         q.add(t);
@@ -168,29 +174,43 @@ public class Server {
         TimeStamp t = q.remove();
         waiting = false;
         notifyAll();
+        sendMessage("release", t.pid, t.logicalClock, t.message);
         // process command
         return inventory.getCommand(t.message);
 
     }
 
     public synchronized void handleMessage(String message) {
+//        System.out.println("RECEIVE: " + message);
         String[] msg = message.split(":");
         String messageType = msg[0];
         // get timestamp and update clock
-        clk.receiveAction(Integer.parseInt(msg[1]),Integer.parseInt(msg[2]));
+        clk.receiveAction(Integer.parseInt(msg[1]), Integer.parseInt(msg[2]));
+        boolean send = false;
+        TimeStamp t = new TimeStamp(message);
+        Iterator<TimeStamp> it = q.iterator();
+        while (it.hasNext()) {
+            TimeStamp timeStamp = it.next();
+            if (timeStamp.equals(t)) {
+                send = true;
+            }
+        }
+        if (send)
+            sendMessage(messageType, t.pid, t.logicalClock, t.message);
         switch (messageType) {
             case "request":
                 // add to q, send okay
-                TimeStamp t = new TimeStamp(message);
                 q.add(t);
-                sendMessage("okay",clk.getValue(),"okay");
+                sendMessage("okay", id, clk.getValue(), "okay");
                 break;
-            case "okay": numOkays++; break;
+            case "okay":
+                numOkays++;
+                break;
             case "release":
                 // remove from q
-                int src = Integer.parseInt(message.split(" ")[1]);
-                Iterator<TimeStamp> it =  q.iterator();
-                while (it.hasNext()){
+                int src = Integer.parseInt(message.split(":")[1]);
+                Iterator<TimeStamp> iter = q.iterator();
+                while (iter.hasNext()) {
                     TimeStamp timeStamp = it.next();
                     if (timeStamp.pid == src) {
                         inventory.getCommand(timeStamp.message);
@@ -199,5 +219,12 @@ public class Server {
                 }
         }
         notifyAll();
+    }
+
+    private void displayQueue() {
+        for (TimeStamp t : q) {
+            System.out.println(t);
+        }
+        System.out.println();
     }
 }
