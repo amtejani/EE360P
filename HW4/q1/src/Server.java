@@ -9,7 +9,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.sql.Time;
 import java.util.*;
 
 public class Server {
@@ -55,40 +54,8 @@ public class Server {
         }
     }
 
-    class TimeStamp implements Comparable<TimeStamp> {
-        int pid;
-        int logicalClock;
-        String message;
-        public TimeStamp(String input) {
-            String[] in = input.split(":");
-            this.pid = Integer.parseInt(in[1]);
-            this.logicalClock = Integer.parseInt(in[2]);
-            this.message = in[3];
-        }
-        public TimeStamp(int id, int clk, String msg) {
-            pid = id;
-            logicalClock = clk;
-            message = msg;
-        }
-
-        public String toString() {
-            return pid + " " + logicalClock + " " + message;
-        }
-
-        @Override
-        public int compareTo(TimeStamp o) {
-            if (logicalClock > o.logicalClock)
-                return 1;
-            if (logicalClock <  o.logicalClock)
-                return -1;
-            if (pid > o.pid) return 1;
-            if (pid < o.pid)
-                return -1;
-            return 0;
-        }
-    }
-
-    private Queue<TimeStamp> q;
+    private Set<String> messages;
+    private Queue<Timestamp> q;
     private Set<InetSocketAddress> servers;
     private int id;
     private LamportClock clk;
@@ -104,6 +71,7 @@ public class Server {
             int port = Integer.parseInt(input[1]);
             this.servers.add(new InetSocketAddress(hostname, port));
         }
+        this.messages = new HashSet<>();
         this.q = new PriorityQueue<>();
         this.inventory = inventory;
         this.id = id;
@@ -113,17 +81,21 @@ public class Server {
 
     private void sendMessage(String messageType, int pid, int c, String message) {
 //        displayQueue();
+//        StringBuilder str = new StringBuilder("server\n");
+        StringBuilder str = new StringBuilder();
+        str.append(messageType); str.append(":");
+        str.append(pid); str.append(":");
+        str.append(c); str.append(":");
+        str.append(message);
+        messages.add(str.toString());
+        StringBuilder strSend = new StringBuilder("server\n");
+        strSend.append(str);
         for(InetSocketAddress other: servers) {
             Socket s = new Socket();
             try {
                 s.connect(other, Server.TIMEOUT);
                 PrintStream pout = new PrintStream(s.getOutputStream());
-                StringBuilder str = new StringBuilder("server\n");
-                str.append(messageType); str.append(":");
-                str.append(pid); str.append(":");
-                str.append(c); str.append(":");
-                str.append(message);
-                pout.println(str.toString());
+                pout.println(strSend.toString());
 //                System.out.println("SEND: " + str.toString());
                 pout.flush();
             } catch (SocketTimeoutException e) {
@@ -155,7 +127,7 @@ public class Server {
         // print lamports clock and command to port
         sendMessage("request",id,c,message);
         // add to q
-        TimeStamp t = new TimeStamp(id, c, message);
+        Timestamp t = new Timestamp(id, c, message);
         q.add(t);
         // set num acks to 0
         numOkays = 0;
@@ -171,7 +143,7 @@ public class Server {
 
     public synchronized String releaseCS() {
         // remove from q
-        TimeStamp t = q.remove();
+        Timestamp t = q.remove();
         waiting = false;
         notifyAll();
         sendMessage("release", t.pid, t.logicalClock, t.message);
@@ -186,16 +158,9 @@ public class Server {
         String messageType = msg[0];
         // get timestamp and update clock
         clk.receiveAction(Integer.parseInt(msg[1]), Integer.parseInt(msg[2]));
-        boolean duplicate = false;
-        TimeStamp t = new TimeStamp(message);
-        Iterator<TimeStamp> it = q.iterator();
-        while (it.hasNext()) {
-            TimeStamp timeStamp = it.next();
-            if (timeStamp.equals(t)) {
-                duplicate = true;
-            }
-        }
-        if (!duplicate) {
+        boolean send = messages.add(message);
+        Timestamp t = new Timestamp(message);
+        if (send) {
             sendMessage(messageType, t.pid, t.logicalClock, t.message);
             switch (messageType) {
                 case "request":
@@ -209,9 +174,9 @@ public class Server {
                 case "release":
                     // remove from q
                     int src = Integer.parseInt(message.split(":")[1]);
-                    Iterator<TimeStamp> iter = q.iterator();
-                    while (iter.hasNext()) {
-                        TimeStamp timeStamp = it.next();
+                    Iterator<Timestamp> it = q.iterator();
+                    while (it.hasNext()) {
+                        Timestamp timeStamp = it.next();
                         if (timeStamp.pid == src) {
                             inventory.getCommand(timeStamp.message);
                             it.remove();
@@ -223,7 +188,7 @@ public class Server {
     }
 
     private void displayQueue() {
-        for (TimeStamp t : q) {
+        for (Timestamp t : q) {
             System.out.println(t);
         }
         System.out.println();
