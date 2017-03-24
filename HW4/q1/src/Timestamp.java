@@ -1,5 +1,7 @@
 /**
  * Created by Ali on 3/23/2017.
+ * Ali Tejani, amt3639
+ * Travis McClure, tam2983
  */
 public class Timestamp implements Comparable<Timestamp> {
     int pid;

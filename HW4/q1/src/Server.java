@@ -33,6 +33,7 @@ public class Server {
             if(i == myID) {
                 String[] input = str.split(":");
                 thisPort = Integer.parseInt(input[1]);
+              //  System.out.println("The server is running on port "+thisPort);
             } else {
                 servers.add(str);
             }
@@ -90,9 +91,30 @@ public class Server {
         messages.add(str.toString());
         StringBuilder strSend = new StringBuilder("server\n");
         strSend.append(str);
-        for(InetSocketAddress other: servers) {
+        Iterator<InetSocketAddress> iter = servers.iterator();
+        while(iter.hasNext()) {//for(InetSocketAddress other: servers) {
             Socket s = new Socket();
             try {
+                s.connect(iter.next(), Server.TIMEOUT);
+                PrintStream pout = new PrintStream(s.getOutputStream());
+                pout.println(strSend.toString());
+//                System.out.println("SEND: " + str.toString());
+                pout.flush();
+            } catch (SocketTimeoutException e) {
+                iter.remove();
+                try {
+                    s.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                s = new Socket();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    /*
+     *  try {
                 s.connect(other, Server.TIMEOUT);
                 PrintStream pout = new PrintStream(s.getOutputStream());
                 pout.println(strSend.toString());
@@ -109,8 +131,7 @@ public class Server {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
+     */
 
     public synchronized void requestCS(String message) {
         // update clock
