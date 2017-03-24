@@ -67,10 +67,12 @@ public class Client {
                 this.currentServer.connect(this.servers.peek(), TIMEOUT);
                 this.din = new Scanner(currentServer.getInputStream());
                 this.pout = new PrintStream(currentServer.getOutputStream());
+                //System.out.println("The client is connected to the following server: "+this.servers.peek());
             } catch (SocketTimeoutException e) {
                 servers.remove();
                 currentServer.close();
                 currentServer = new Socket();
+                //System.out.println("Removed server. Moved to new server.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
